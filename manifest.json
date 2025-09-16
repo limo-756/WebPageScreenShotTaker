@@ -13,7 +13,8 @@
   "permissions": [
     "activeTab",
     "tabs",
-    "downloads"
+    "downloads",
+    "<all_urls>"
   ],
 
   "background": {
