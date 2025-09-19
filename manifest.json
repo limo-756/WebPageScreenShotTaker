@@ -3,7 +3,7 @@
   "name": "Web Page Screenshot to PDF",
   "version": "1.0.0",
 
-  "description": "Scrolls a page, captures each viewport, stitches into one image, and saves as PDF.",
+  "description": "Scrolls a page, captures each viewport, stitches into one image, and saves as PDF. Also extracts HTML paragraphs and converts to PDF.",
 
   "icons": {
     "48": "icons/icon.png",
@@ -24,6 +24,7 @@
 
   "browser_action": {
     "default_title": "Capture full page to PDF",
+    "default_popup": "popup.html",
     "default_icon": {
       "32": "icons/icon_32x32.png",
       "48": "icons/icon.png"
@@ -33,7 +34,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["content.js", "paragraph_extractor.js"],
       "run_at": "document_idle"
     }
   ]

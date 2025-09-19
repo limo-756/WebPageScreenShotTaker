@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Web Page Tools</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Web Page Tools</h2>
+        </div>
+        
+        <div class="section">
+            <h3>Screenshot to PDF</h3>
+            <button id="captureBtn" class="primary-btn">
+                Capture Full Page
+            </button>
+        </div>
+        
+        <div class="section">
+            <h3>Extract Blog Paragraphs</h3>
+            <button id="extractBtn" class="primary-btn">
+                Extract Paragraphs
+            </button>
+            
+            <div id="paragraphsList" class="paragraphs-list" style="display: none;">
+                <div class="list-header">
+                    <span>Found <span id="paragraphCount">0</span> paragraphs</span>
+                    <div class="controls">
+                        <button id="selectAllBtn" class="small-btn">Select All</button>
+                        <button id="deselectAllBtn" class="small-btn">Deselect All</button>
+                    </div>
+                </div>
+                
+                <div id="paragraphsContainer" class="paragraphs-container">
+                    <!-- Paragraphs will be populated here -->
+                </div>
+                
+                <div class="actions">
+                    <button id="convertToPdfBtn" class="success-btn">
+                        Convert Selected to PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="status" class="status" style="display: none;">
+            <span id="statusText"></span>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

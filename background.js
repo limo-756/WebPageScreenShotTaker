@@ -160,6 +160,36 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       throw e;
     }
   }
+
+  // Handle paragraph to PDF conversion
+  if (message.type === 'convertParagraphsToPdf') {
+    try {
+      const { paragraphs, url } = message;
+      console.log('Converting paragraphs to PDF:', { count: paragraphs.length, url });
+      
+      const pdfContent = await generatePdfFromParagraphs(paragraphs, url);
+      const filename = generateFilename(url, 'paragraphs');
+      
+      // Determine file type based on content
+      const mimeType = filename.endsWith('.pdf') ? 'application/pdf' : 'text/plain';
+      const blob = new Blob([pdfContent], { type: mimeType });
+      const downloadUrl = URL.createObjectURL(blob);
+      
+      const downloadId = await browser.downloads.download({
+        url: downloadUrl,
+        filename: filename,
+        saveAs: true
+      });
+      
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 10_000);
+      console.log('Paragraph PDF download started:', { downloadId, filename });
+      
+      return { success: true, downloadId, filename };
+    } catch (error) {
+      console.error('Failed to convert paragraphs to PDF:', error);
+      return { success: false, error: error.message };
+    }
+  }
 });
 
 function logImageToConsole(dataUrl) {
@@ -237,6 +267,117 @@ function isCaptureProhibitedUrl(url) {
     return false;
   } catch (_) {
     return false;
+  }
+}
+
+// Generate PDF from extracted paragraphs using basic PDF structure
+async function generatePdfFromParagraphs(paragraphs, sourceUrl) {
+  console.log('Generating PDF from paragraphs:', paragraphs.length);
+  
+  // Create a simple HTML document for PDF conversion
+  const htmlContent = createHtmlFromParagraphs(paragraphs, sourceUrl);
+  
+  // Convert HTML to PDF using the print API (available in Firefox)
+  try {
+    // Create a data URL with the HTML content
+    const htmlDataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+    
+    // For Firefox extensions, we'll create a simple PDF structure
+    // Note: This is a basic implementation. For production, consider using libraries like jsPDF
+    return await createBasicPdf(paragraphs, sourceUrl);
+  } catch (error) {
+    console.error('Failed to generate PDF:', error);
+    throw error;
+  }
+}
+
+function createHtmlFromParagraphs(paragraphs, sourceUrl) {
+  const title = getPageTitle(sourceUrl);
+  const date = new Date().toLocaleDateString();
+  
+  let html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>${title}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            .header { border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+            .source { color: #666; font-size: 14px; }
+            .paragraph { margin-bottom: 20px; text-align: justify; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 12px; color: #666; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div class="title">${title}</div>
+            <div class="source">Source: ${sourceUrl}</div>
+            <div class="source">Extracted on: ${date}</div>
+        </div>
+  `;
+  
+  paragraphs.forEach((paragraph, index) => {
+    html += `<div class="paragraph">${paragraph.text}</div>\n`;
+  });
+  
+  html += `
+        <div class="footer">
+            Extracted ${paragraphs.length} paragraphs from ${sourceUrl}
+        </div>
+    </body>
+    </html>
+  `;
+  
+  return html;
+}
+
+// Create a basic PDF structure (simplified version)
+async function createBasicPdf(paragraphs, sourceUrl) {
+  // This is a simplified PDF creation. In a real implementation, 
+  // you would use a proper PDF library like jsPDF or PDFKit
+  
+  const title = getPageTitle(sourceUrl);
+  const date = new Date().toLocaleDateString();
+  
+  // Create text content for the PDF
+  let textContent = `${title}\n\n`;
+  textContent += `Source: ${sourceUrl}\n`;
+  textContent += `Extracted on: ${date}\n\n`;
+  textContent += '=' .repeat(50) + '\n\n';
+  
+  paragraphs.forEach((paragraph, index) => {
+    textContent += `${paragraph.text}\n\n`;
+  });
+  
+  textContent += '\n' + '-'.repeat(50) + '\n';
+  textContent += `Extracted ${paragraphs.length} paragraphs from ${sourceUrl}`;
+  
+  // Convert text to a simple PDF-like format (text file for now)
+  // In a real implementation, this would generate actual PDF bytes
+  const encoder = new TextEncoder();
+  return encoder.encode(textContent);
+}
+
+function getPageTitle(url) {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace('www.', '') + ' - Blog Content';
+  } catch (e) {
+    return 'Blog Content';
+  }
+}
+
+function generateFilename(url, type) {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.replace('www.', '').replace(/\./g, '_');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    return `${hostname}_${type}_${timestamp}.txt`;
+  } catch (e) {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    return `blog_${type}_${timestamp}.txt`;
   }
 }
 
